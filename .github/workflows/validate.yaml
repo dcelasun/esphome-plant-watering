@@ -1,0 +1,34 @@
+name: Validate firmware
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Create secrets.yaml
+        run: cp secrets.example.yaml secrets.yaml
+
+      - name: Validate ESPHome config
+        run: make validate
+
+      - name: Compile firmware
+        run: make compile

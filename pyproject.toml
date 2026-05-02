@@ -1,0 +1,8 @@
+[project]
+name = "esphome-plant-watering"
+version = "0.1.0"
+description = "ESPHome firmware for AtomS3-Lite, PbHub v1.1, and Unit Watering modules"
+requires-python = ">=3.12"
+dependencies = [
+    "esphome==2026.4.3",
+]

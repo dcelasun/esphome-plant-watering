@@ -1,0 +1,6 @@
+venv/
+.esphome/
+.uv-cache/
+.idea/
+secrets.yaml
+__pycache__
