@@ -61,9 +61,11 @@ substitutions:
 
 ## Installation
 
+Make sure you have [uv](https://docs.astral.sh/uv/#installation) installed. On Linux, it's available in most package managers.
+
 ### ESPHome
 
-All dependencies, including `esphome` are handled for you without touching your system files.
+All dependencies, including `esphome` are handled by `uv` without touching your system files.
 
 Install ESPHome and dependencies:
 ```sh
