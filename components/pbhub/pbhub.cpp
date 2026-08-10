@@ -132,6 +132,15 @@ void PbHubSwitch::setup() {
   this->publish_state(false);
 }
 
+void PbHubSwitch::set_max_run_time(uint32_t max_run_time) {
+  if (max_run_time == this->max_run_time_) {
+    return;
+  }
+
+  ESP_LOGI(TAG, "'%s': max run time %ums -> %ums", this->get_name().c_str(), this->max_run_time_, max_run_time);
+  this->max_run_time_ = max_run_time;
+}
+
 void PbHubSwitch::dump_config() {
   LOG_SWITCH("", "PbHub Pump", this);
   ESP_LOGCONFIG(TAG, "  Channel: %u", this->channel_);

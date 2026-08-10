@@ -55,7 +55,7 @@ class PbHubSwitch : public switch_::Switch, public Component {
   void set_parent(PbHubComponent *parent) { this->parent_ = parent; }
   void set_channel(uint8_t channel) { this->channel_ = channel; }
   void set_pin_index(uint8_t pin_index) { this->pin_index_ = pin_index; }
-  void set_max_run_time(uint32_t max_run_time) { this->max_run_time_ = max_run_time; }
+  void set_max_run_time(uint32_t max_run_time);
   uint8_t get_channel() const { return this->channel_; }
 
  protected:

@@ -11,6 +11,7 @@ ESPHome firmware for automated watering of up to 6 plants with an M5Stack AtomS3
   * [Hardware](#hardware)
   * [Board Selection](#board-selection)
   * [Configuration](#configuration)
+  * [Pump Run Time Limits](#pump-run-time-limits)
   * [Installation](#installation)
     * [ESPHome](#esphome)
     * [Home Assistant](#home-assistant)
@@ -59,6 +60,7 @@ plant-watering-atoms3-lite.yaml   # AtomS3-Lite
 plant-watering-atom-lite.yaml     # Atom Lite
 boards/                           # per-board pins, chip and build flags
 common/plant-watering.yaml        # shared configuration
+common/plant.yaml                 # per plant entities
 ```
 
 Every `make` target takes a `BOARD` variable and default to `atoms3-lite`:
@@ -76,11 +78,13 @@ Copy the example secrets file and edit the values:
 cp secrets.example.yaml secrets.yaml
 ```
 
-Customise `common/plant-watering.yaml` if needed. These settings are shared by all boards:
+Customise `common/plant-watering.yaml` if needed. These settings are shared by all boards.
 
-- `pump_max_run_time`: default `10s`.
+Device-wide settings live in the `substitutions:` block at the top:
+
+- `pump_max_run_time_seconds`: default `"30"`. Default safety shutoff, adjustable per pump from Home Assistant afterwards. See [Pump Run Time Limits](#pump-run-time-limits).
 - `allow_simultaneous_pumps`: default `"false"`.
-- `plant_N_dry_raw` and `plant_N_wet_raw`: calibration values for each probe.
+- `dry_percent_threshold` and `saturated_percent_threshold`: defaults `"35"` and `"90"`, the cutoffs behind each plant's `Soil Moisture State`.
 - `device_name`: base hostname. ESPHome appends the device MAC suffix at runtime.
 
 To allow multiple pumps at once with external pump power:
@@ -89,6 +93,31 @@ To allow multiple pumps at once with external pump power:
 substitutions:
   allow_simultaneous_pumps: "true"
 ```
+
+Per-plant settings are under the `packages` block. Each plant is one entry that expands `common/plant.yaml`:
+
+```yaml
+  plant_1: !include
+    file: plant.yaml
+    vars:
+      index: 1          # plant number; the PbHub channel is index - 1
+      dry_raw: 2200     # raw reading with the probe dry, mapped to 0%
+      wet_raw: 1700     # raw reading with the probe wet, mapped to 100%
+      disabled: "false" # "true" hides this plant's entities in Home Assistant
+```
+
+Plants 1 and 2 are enabled by default.
+
+## Pump Run Time Limits
+
+This is a firmware-enforced run time limit. Once a pump is turned on, the device turns it back off after that many seconds, regardless of any automation. This is so you don't accidentally leave a pump running and damage it if the water runs out.
+
+The default is 30 seconds but you can configure it per-pump in Home Assistant. Changes are saved on the device and survive a reboot.
+
+Keep in mind that:
+
+- The range allowed by the firmware is **1 to 60 seconds**, so Home Assistant cannot request a longer run than 60s. Increase `max_value` in `common/plant-watering.yaml` and reflash if you want to.
+- Changing the limit while that pump is already running does not shorten the run in progress. The new value applies from the next run onwards.
 
 ## Installation
 
@@ -151,7 +180,7 @@ For each connected plant:
 
 1. Run logs and note the raw value with the probe dry.
 2. Wet the soil or probe area and note the raw value after it stabilizes.
-3. Put those values into `plant_N_dry_raw` and `plant_N_wet_raw`.
+3. Put those values into that plant's `dry_raw` and `wet_raw` vars in the `packages:` block of `common/plant-watering.yaml`.
 4. Adjust `dry_percent_threshold` if Home Assistant should water earlier or later.
 
 ## Home Assistant Automation Examples
@@ -185,5 +214,16 @@ condition:
         state: "Saturated"
 ```
 
-The firmware enforces a pump max runtime, so Home Assistant does not need to turn the switch off for basic safety. 
-Of course, you can still add explicit delays and `switch.turn_off` actions.
+To set how long a plant is watered, set its `Plant N Pump Max Run Time` number and then just turn the pump on:
+
+```yaml
+action:
+  - service: number.set_value
+    target:
+      entity_id: number.plant_watering_plant_1_pump_max_run_time
+    data:
+      value: 8
+  - service: switch.turn_on
+    target:
+      entity_id: switch.plant_watering_plant_1_water_pump
+```

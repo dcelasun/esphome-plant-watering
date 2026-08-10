@@ -1,0 +1,91 @@
+# Expected vars:
+#
+#   index    - plant number, 1 to 6. The PbHub channel is index - 1.
+#   dry_raw  - raw reading with the probe dry, mapped to 0%.
+#   wet_raw  - raw reading with the probe wet, mapped to 100%.
+#   disabled - "true" to hide this plant's entities in Home Assistant by default.
+#
+# Everything else comes from the substitutions in plant-watering.yaml.
+
+sensor:
+  - platform: pbhub
+    pbhub_id: watering_pbhub
+    channel: ${index - 1}
+    id: plant_${index}_moisture_raw
+    name: "Plant ${index} Soil Moisture Raw"
+    icon: mdi:counter
+    disabled_by_default: ${disabled}
+    update_interval: 30s
+
+  - platform: template
+    id: plant_${index}_soil_moisture
+    name: "Plant ${index} Soil Moisture Percent"
+    icon: mdi:water-percent
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: moisture
+    state_class: measurement
+    disabled_by_default: ${disabled}
+    update_interval: 30s
+    lambda: |-
+      if (!id(plant_${index}_moisture_raw).has_state()) {
+        return {};
+      }
+      return id(plant_${index}_moisture_raw).state;
+    filters:
+      - calibrate_linear:
+          - ${dry_raw} -> 0.0
+          - ${wet_raw} -> 100.0
+      - lambda: |-
+          if (x < 0.0f) return 0.0f;
+          if (x > 100.0f) return 100.0f;
+          return x;
+
+text_sensor:
+  - platform: template
+    name: "Plant ${index} Soil Moisture State"
+    icon: mdi:water-percent
+    disabled_by_default: ${disabled}
+    update_interval: 30s
+    lambda: |-
+      if (!id(plant_${index}_soil_moisture).has_state()) {
+        return {};
+      }
+      const float moisture = id(plant_${index}_soil_moisture).state;
+      if (moisture < ${dry_percent_threshold}) {
+        return {"Dry"};
+      }
+      if (moisture >= ${saturated_percent_threshold}) {
+        return {"Saturated"};
+      }
+      return {"Wet"};
+
+switch:
+  - platform: pbhub
+    pbhub_id: watering_pbhub
+    channel: ${index - 1}
+    pin_index: 1
+    id: plant_${index}_water_pump
+    name: "Plant ${index} Water Pump"
+    disabled_by_default: ${disabled}
+    max_run_time: ${pump_max_run_time_seconds}s
+
+number:
+  - platform: template
+    id: plant_${index}_max_run_time
+    name: "Plant ${index} Pump Max Run Time"
+    icon: mdi:timer-cog
+    unit_of_measurement: s
+    device_class: duration
+    entity_category: config
+    disabled_by_default: ${disabled}
+    mode: box
+    min_value: 1
+    max_value: 60
+    step: 1
+    initial_value: ${pump_max_run_time_seconds}
+    optimistic: true
+    restore_value: true
+    on_value:
+      - lambda: |-
+          id(plant_${index}_water_pump).set_max_run_time(static_cast<uint32_t>(x * 1000.0f));
