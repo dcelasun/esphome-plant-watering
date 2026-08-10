@@ -1,0 +1,21 @@
+# M5Stack AtomS3 Lite - ESP32-S3FN8, 8MB flash.
+# Native USB, so the logger runs over USB CDC and the board enumerates as /dev/ttyACM0.
+# Grove port is G2 (SDA) / G1 (SCL).
+
+substitutions:
+  i2c_sda: GPIO2
+  i2c_scl: GPIO1
+
+esphome:
+  # Keep build artifacts separate from the other boards, since the device name is shared.
+  build_path: build/${device_name}-atoms3-lite
+  platformio_options:
+    build_flags:
+      - -DARDUINO_USB_CDC_ON_BOOT=1
+      - -DARDUINO_USB_MODE=1
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: arduino

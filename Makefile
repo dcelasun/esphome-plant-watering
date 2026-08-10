@@ -1,5 +1,10 @@
-CONFIG ?= plant-watering.yaml
-DEVICE ?= /dev/ttyACM0
+# Supported boards: atoms3-lite, atom-lite
+BOARD ?= atoms3-lite
+CONFIG ?= plant-watering-$(BOARD).yaml
+
+# The Atom Lite talks through a CH9102/CP210x bridge; the AtomS3 Lite uses native USB.
+DEVICE ?= $(if $(filter atom-lite,$(BOARD)),/dev/ttyUSB0,/dev/ttyACM0)
+
 VENV ?= venv
 
 export UV_PROJECT_ENVIRONMENT := $(VENV)

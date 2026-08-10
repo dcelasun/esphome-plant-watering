@@ -12,6 +12,13 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board:
+          - atoms3-lite
+          - atom-lite
+    name: Validate (${{ matrix.board }})
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -28,7 +35,7 @@ jobs:
         run: cp secrets.example.yaml secrets.yaml
 
       - name: Validate ESPHome config
-        run: make validate
+        run: make validate BOARD=${{ matrix.board }}
 
       - name: Compile firmware
-        run: make compile
+        run: make compile BOARD=${{ matrix.board }}

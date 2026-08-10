@@ -1,0 +1,17 @@
+# M5Stack Atom Lite - ESP32-PICO-D4, 4MB flash.
+# No native USB; a CH9102/CP210x bridge exposes UART0, so the board enumerates as /dev/ttyUSB0
+# and the ARDUINO_USB_* build flags used by the S3 boards do not apply.
+# Grove port is G26 (SDA) / G32 (SCL).
+
+substitutions:
+  i2c_sda: GPIO26
+  i2c_scl: GPIO32
+
+esphome:
+  # Keep build artifacts separate from the other boards, since the device name is shared.
+  build_path: build/${device_name}-atom-lite
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: arduino

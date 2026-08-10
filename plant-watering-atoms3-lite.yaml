@@ -1,0 +1,3 @@
+packages:
+  - !include boards/atoms3-lite.yaml
+  - !include common/plant-watering.yaml

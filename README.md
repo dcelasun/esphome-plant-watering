@@ -1,6 +1,6 @@
 # ESPHome Plant Watering
 
-ESPHome firmware for automated watering of up to 6 plants with an M5Stack AtomS3-Lite, M5Stack PbHub v1.1, and M5Stack Unit Watering modules.
+ESPHome firmware for automated watering of up to 6 plants with an M5Stack AtomS3-Lite or Atom Lite, M5Stack PbHub v1.1, and M5Stack Unit Watering modules.
 
 <p align="center">
     <img src="/ha-device.png" alt="Device in Home Assistant">
@@ -9,6 +9,7 @@ ESPHome firmware for automated watering of up to 6 plants with an M5Stack AtomS3
 <!-- TOC -->
 * [ESPHome Plant Watering](#esphome-plant-watering)
   * [Hardware](#hardware)
+  * [Board Selection](#board-selection)
   * [Configuration](#configuration)
   * [Installation](#installation)
     * [ESPHome](#esphome)
@@ -23,20 +24,50 @@ ESPHome firmware for automated watering of up to 6 plants with an M5Stack AtomS3
 
 ## Hardware
 
-- M5Stack [AtomS3-Lite](https://docs.m5stack.com/en/core/AtomS3%20Lite).
+- One of:
+  - M5Stack [AtomS3-Lite](https://docs.m5stack.com/en/core/AtomS3%20Lite) (ESP32-S3FN8), or
+  - M5Stack [Atom Lite](https://docs.m5stack.com/en/core/atom_lite) (ESP32-PICO-D4).
 - M5Stack [PbHub v1.1](https://docs.m5stack.com/en/unit/pbhub_1.1).
 - 1 to 6 M5Stack [Unit Watering](https://docs.m5stack.com/en/unit/watering) modules.
-- USB-C power supply for the AtomS3-Lite.
+- USB-C power supply for the controller.
 - Optional [Unit TypeC to Grove](https://docs.m5stack.com/en/unit/typec2grove) or equivalent external 5V supply if you want to turn on multiple pumps at once.
 
 Expected wiring:
 
-- AtomS3-Lite Grove port to PbHub input.
+- Controller Grove port to PbHub input.
 - PbHub port `0` to Plant 1 Unit Watering.
 - PbHub port `1` to Plant 2 Unit Watering.
 - PbHub ports `2..5` are configured but disabled by default in Home Assistant.
 
-AtomS3-Lite alone can only supply one pump at a time, so the firmware defaults to `allow_simultaneous_pumps: "false"`.
+The Grove I2C pins differ between the two boards, which is why each has its own configuration:
+
+| Board        | SDA   | SCL   | Serial device  |
+|--------------|-------|-------|----------------|
+| AtomS3-Lite  | `G2`  | `G1`  | `/dev/ttyACM0` |
+| Atom Lite    | `G26` | `G32` | `/dev/ttyUSB0` |
+
+The AtomS3-Lite exposes native USB, while the Atom Lite uses a CH9102/CP210x USB-serial bridge, hence the different device nodes.
+
+Either board alone can only supply one pump at a time, so the firmware defaults to `allow_simultaneous_pumps: "false"`.
+
+## Board Selection
+
+Each board has a `plant-watering-<board-name>.yaml` in the repository root, and per-board overrides in `boards/<board-name>.yaml`:
+
+```
+plant-watering-atoms3-lite.yaml   # AtomS3-Lite
+plant-watering-atom-lite.yaml     # Atom Lite
+boards/                           # per-board pins, chip and build flags
+common/plant-watering.yaml        # shared configuration
+```
+
+Every `make` target takes a `BOARD` variable and default to `atoms3-lite`:
+
+```sh
+make compile BOARD=atom-lite
+```
+
+`BOARD` also picks the right default serial device, so `make upload BOARD=atom-lite` targets `/dev/ttyUSB0`.
 
 ## Configuration
 
@@ -45,7 +76,7 @@ Copy the example secrets file and edit the values:
 cp secrets.example.yaml secrets.yaml
 ```
 
-Customise `plant-watering.yaml` if needed:
+Customise `common/plant-watering.yaml` if needed. These settings are shared by all boards:
 
 - `pump_max_run_time`: default `10s`.
 - `allow_simultaneous_pumps`: default `"false"`.
@@ -72,7 +103,9 @@ Install ESPHome and dependencies:
 make setup
 ```
 
-Validate the configuration in `plant-watering.yaml`:
+All of the commands below default to the AtomS3-Lite. Append `BOARD=atom-lite` to any of them to target the Atom Lite instead.
+
+Validate the configuration:
 ```sh
 make validate
 ```
@@ -82,7 +115,7 @@ Compile:
 make compile
 ```
 
-Flash over USB (assumes `/dev/ttyACM0`):
+Flash over USB (assumes `/dev/ttyACM0` on the AtomS3-Lite, `/dev/ttyUSB0` on the Atom Lite):
 ```sh
 make upload
 ```
@@ -108,7 +141,7 @@ If you have the [ESPHome integration](https://esphome.io/integrations/esphome.ht
 
 Alternatively, you can [manually add the device](https://my.home-assistant.io/redirect/config_flow_start?domain=esphome) to Home Assistant by its IP address.
 
-It's strongly recommended to use a static IP address for the AtomS3-Lite.
+It's strongly recommended to use a static IP address for the device.
 
 ## Calibration
 
