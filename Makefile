@@ -14,21 +14,29 @@ export PLATFORMIO_CORE_DIR := $(CURDIR)/$(VENV)/platformio
 
 ESPHOME := $(CURDIR)/$(VENV)/bin/esphome
 
-.PHONY: setup validate compile upload logs clean
+.PHONY: setup validate compile upload logs clean idedata-guard
 
 setup:
 	uv sync
 
+# Both boards share one ESPHome build cache, so a stale one can flash the wrong
+# board's firmware. Delete it unless it was built for $(BOARD).
+idedata-guard:
+	@for f in .esphome/idedata/*.json; do \
+		[ -e "$$f" ] || continue; \
+		grep -q -- "-$(BOARD)/" "$$f" || rm -f "$$f"; \
+	done
+
 validate: setup
 	$(ESPHOME) config $(CONFIG)
 
-compile: setup
+compile: setup idedata-guard
 	$(ESPHOME) compile $(CONFIG)
 
-upload: setup
+upload: setup idedata-guard
 	$(ESPHOME) upload $(CONFIG) --device $(DEVICE)
 
-logs: setup
+logs: setup idedata-guard
 	$(ESPHOME) logs $(CONFIG) --device $(DEVICE)
 
 clean:
