@@ -12,6 +12,7 @@ ESPHome firmware for automated watering of up to 6 plants with an M5Stack AtomS3
   * [Board Selection](#board-selection)
   * [Configuration](#configuration)
   * [Pump Run Time Limits](#pump-run-time-limits)
+  * [Status LED](#status-led)
   * [Installation](#installation)
     * [ESPHome](#esphome)
     * [Home Assistant](#home-assistant)
@@ -118,6 +119,18 @@ Keep in mind that:
 
 - The range allowed by the firmware is **1 to 60 seconds**, so Home Assistant cannot request a longer run than 60s. Increase `max_value` in `common/plant-watering.yaml` and reflash if you want to.
 - Changing the limit while that pump is already running does not shorten the run in progress. The new value applies from the next run onwards.
+
+## Status LED
+
+Both boards have a single onboard RGB LED, which is used as a status indicator:
+
+| State                       | LED       |
+|-----------------------------|-----------|
+| Booting, Wi-Fi not up yet   | Red       |
+| Connected to Wi-Fi          | Off       |
+| Wi-Fi connection lost       | Red       |
+
+The LED is also exposed to Home Assistant as a `Status LED` light if you want to control it directly, for example to find the device on a shelf. Anything you set there is overwritten the next time the Wi-Fi connection changes state.
 
 ## Installation
 

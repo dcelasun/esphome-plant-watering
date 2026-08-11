@@ -5,6 +5,8 @@
 substitutions:
   i2c_sda: GPIO2
   i2c_scl: GPIO1
+  led_pin: GPIO35
+  led_chipset: WS2812
 
 esphome:
   # Keep build artifacts separate from the other boards, since the device name is shared.

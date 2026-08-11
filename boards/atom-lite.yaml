@@ -6,6 +6,8 @@
 substitutions:
   i2c_sda: GPIO26
   i2c_scl: GPIO32
+  led_pin: GPIO27
+  led_chipset: SK6812
 
 esphome:
   # Keep build artifacts separate from the other boards, since the device name is shared.
